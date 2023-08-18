@@ -25,7 +25,7 @@ EepromErrorState eeprom_writeMultiplePages(Eeprom* eeprom, uint8_t *pData, uint3
 
 
 //------------------------ PUBLIC FUNCTIONS ------------------------//
-EepromErrorState eeprom_Init(Eeprom* eeprom)
+void eeprom_Init(Eeprom* eeprom)
 {
 	// Configure the erase buffer (just a buffer full of 1's)
 	for(int i=0; i<PAGE_WIDTH; i++)
@@ -38,7 +38,8 @@ EepromErrorState eeprom_Init(Eeprom* eeprom)
 
 EepromErrorState eeprom_Write(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr)
 {
-   eeprom_writeMultiplePages(eeprom, pData, len, dataAddr);
+   EepromErrorState status = eeprom_writeMultiplePages(eeprom, pData, len, dataAddr);
+   return
 }
 
 EepromErrorState eeprom_Read(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr)
@@ -171,13 +172,13 @@ EepromErrorState eeprom_writeMultiplePages(Eeprom* eeprom, uint8_t *pData, uint3
 			status = eeprom_writeSequential(eeprom, currentData, currentDataAddr, currentPageBytes);
 
 			// Update the static data variables
-			numRemaining = (num - currentPageBytes);
+			numRemaining = (len - currentPageBytes);
 			currentData += currentPageBytes;
 			currentDataAddr += currentPageBytes;
 		}
 		else
 		{
-			status = eeprom_writeSequential(eeprom, currentData, currentDataAddr, num);
+			status = eeprom_writeSequential(eeprom, currentData, currentDataAddr, len);
 
 			// Set the flag so that no future writes take place
 			eeprom->writeInProgress = FALSE;
@@ -232,7 +233,7 @@ EepromErrorState eeprom_readRandom(Eeprom* eeprom, uint8_t *pData, uint32_t data
 	txPacket[1] = (uint8_t)((dataAddr >> 16) & 0xff);
 	txPacket[2] = (uint8_t)((dataAddr >> 8) & 0xff);
 	txPacket[3] = (uint8_t)(dataAddr & 0xff);
-	HAL_GPIO_WritePin(eeprom-csPort, eeprom->csPin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_RESET);
 	if(HAL_SPI_Transmit(eeprom->hspi, txPacket, 4, HAL_MAX_DELAY))
 	{
 		return EepromHalError;

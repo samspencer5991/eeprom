@@ -30,14 +30,14 @@
 #define LID_CMD	0b10000010		// Locks the Identification page in read-only mode
 
 // Status register bit positions
-#define WIP_BIT		0
+#define WIP_BIT	0
 #define WEL_BIT 	1
-#define BP0_BIT		2
-#define BP1_BIT		3
+#define BP0_BIT	2
+#define BP1_BIT	3
 #define SRWD_BIT	4
 
 #define MAX_WRITE_CYCLES	4000000	// Maximum number of writes allowed per cell
-#define PAGE_WIDTH 				512			// Maximum number of bytes in a page write
+#define PAGE_WIDTH 			512			// Maximum number of bytes in a page write
 
 #endif
 
@@ -80,7 +80,7 @@ typedef struct
 
 
 //-------------------- PUBLIC FUNCTIONS PROTOTYPES --------------------//
-EepromErrorState eeprom_Init(Eeprom* eeprom);
+void eeprom_Init(Eeprom* eeprom);
 EepromErrorState eeprom_Write(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr);
 EepromErrorState eeprom_Read(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr);
 
