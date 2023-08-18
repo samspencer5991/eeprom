@@ -1,18 +1,20 @@
-#ifndef EEPROM_STORAGE_H_
-#define EEPROM_STORAGE_H_
+#ifndef EEPROM_H_
+#define EEPROM_H_
+
+#include "main.h"
 
 // SUPPORTED EEPROM CHIPS //
 // uncomment all chip types that will be used (multiple supported)
-//#define M95M04
+#define M95M04
 //#define M95M01
 
 #if defined(M95M04) || defined(M95M01)
 #include "spi.h"
 
 #define SPI_EEPROM
-#define WRITE_CYCLE_TIME	5				// Required time for the device to complete an internal  write operation (mS)
-#define READ_CYCLE_TIME		5				// Required time for the device to complete an internal  read operation (mS)
-#define	READY_CHECK_TIMEOUT	10
+#define WRITE_CYCLE_TIME	      5				// Required time for the device to complete an internal  write operation (mS)
+#define READ_CYCLE_TIME		      5				// Required time for the device to complete an internal  read operation (mS)
+#define READY_CHECK_TIMEOUT	   10
 #define NUM_READY_CHECK_ATTEMPTS	50
 
 // Command bytes
@@ -25,7 +27,7 @@
 #define RDID_CMD	0b10000011		// Read Identification page
 #define WRID_CMD	0b10000010		// Write Identification page
 #define RDLS_CMD	0b10000011		// Reads the Identification page lock status
-#define LID_CMD		0b10000010		// Locks the Identification page in read-only mode
+#define LID_CMD	0b10000010		// Locks the Identification page in read-only mode
 
 // Status register bit positions
 #define WIP_BIT		0
@@ -89,4 +91,4 @@ void eeprom_TimerHandler();
 void eeprom_RxHandler(Eeprom* eeprom);
 
 
-#endif /* EEPROM_STORAGE_H_ */
+#endif /* EEPROM_H_ */
