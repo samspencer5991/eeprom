@@ -39,7 +39,7 @@ void eeprom_Init(Eeprom* eeprom)
 EepromErrorState eeprom_Write(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr)
 {
    EepromErrorState status = eeprom_writeMultiplePages(eeprom, pData, len, dataAddr);
-   return
+   return status;
 }
 
 EepromErrorState eeprom_Read(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr)
