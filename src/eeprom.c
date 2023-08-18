@@ -5,7 +5,7 @@
  *      Author: Sam Work
  */
 
-#include "eeprom_storage.h"
+#include "eeprom.h"
 #include "stdlib.h"
 
 #define TRUE	1
