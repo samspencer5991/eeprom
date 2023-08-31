@@ -7,9 +7,6 @@
 		 "type": "git",
 		 "url": "https://github.com/samspencer5991/eeprom.git"
 	},
-	"dependencies": {
-		 "m95": "https://github.com/samspencer5991/m95.git"
-	},
 	"frameworks": "arduino, stm32cube",
 	"platforms": "ststm32, raspberrypi",
 	"build": {
