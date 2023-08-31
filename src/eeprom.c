@@ -285,7 +285,7 @@ EepromErrorState m95_PollReady(Eeprom* eeprom)
 	{
 		return EepromHalError;
 	}
-	uint32_t startMs, timeMs;
+	uint32_t startMs, timeMs = 0;
 	#if FRAMEWORK_STM32CUBE
 	startMs = HAL_GetTick();
 	#elif FRAMEWORK_ARDUINO

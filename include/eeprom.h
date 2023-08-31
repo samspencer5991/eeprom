@@ -15,7 +15,6 @@
 //#define M95M01
 
 #if defined(M95M04) || defined(M95M01)
-#include "m95.h"
 #define SPI_EEPROM
 #define EEPROM_M95
 #endif
