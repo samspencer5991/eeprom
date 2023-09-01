@@ -1,6 +1,6 @@
 {
 	"name": "Eeprom",
-	"version": "0.3.0",
+	"version": "1.0.0",
 	"keywords": "eeprom",
 	"description": "Functional storage management and drivers for EEPROM devices",
 	"repository": {

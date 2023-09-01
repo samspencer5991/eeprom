@@ -10,6 +10,10 @@
 #include "Arduino.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // SUPPORTED EEPROM CHIPS //
 #define M95M04
 //#define M95M01
@@ -40,9 +44,13 @@ typedef struct
 
 
 //-------------------- PUBLIC FUNCTIONS PROTOTYPES --------------------//
-void eeprom_Init(Eeprom* eeprom);
+EepromErrorState eeprom_Init(Eeprom* eeprom);
 EepromErrorState eeprom_Write(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr);
 EepromErrorState eeprom_Read(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr);
 EepromErrorState eeprom_EraseAll();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* EEPROM_H_ */

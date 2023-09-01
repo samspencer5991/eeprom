@@ -8,6 +8,10 @@
 #include "eeprom.h"
 #include "stdlib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TRUE	1
 #define FALSE	0
 
@@ -53,6 +57,19 @@ EepromErrorState m95_WriteDisable(Eeprom* eeprom);
 EepromErrorState m95_ReadStatusRegister(Eeprom* eeprom, uint8_t* data);
 #endif
 
+uint8_t erasePacket[PAGE_WIDTH];
+
+/**
+  * @brief 	Initialises the eeprom struct
+  * @param 	eeprom eeprom struct
+  * @retval	error state
+  */
+EepromErrorState eeprom_Init(Eeprom* eeprom)
+{
+	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_SET);
+	return EepromOk;
+}
+
 /**
   * @brief 	Writes 'size' number of bytes from the data pointer to the eeprom
   * 			Note that sizes of more than the PAGE_WIDTH cannot be written with one call.
@@ -94,7 +111,7 @@ EepromErrorState eeprom_Write(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint
 	if(len > currentPageBytes)
 	{		
 		#ifdef EEPROM_M95
-		status = m95_Write(eeprom, currentData, currentDataAddr, currentPageBytes);
+		status = m95_Write(eeprom, currentData, currentPageBytes, currentDataAddr);
 		#endif
 		// Update the static data variables
 		numRemaining = (len - currentPageBytes);
@@ -104,7 +121,7 @@ EepromErrorState eeprom_Write(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint
 	else
 	{
 		#ifdef EEPROM_M95
-		status = m95_Write(eeprom, currentData, currentDataAddr, len);
+		status = m95_Write(eeprom, currentData, len, currentDataAddr);
 		#endif
 		return status;
 	}
@@ -116,14 +133,14 @@ EepromErrorState eeprom_Write(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint
 		if(numRemaining <= PAGE_WIDTH)
 		{
 			#ifdef EEPROM_M95
-			status = m95_Write(eeprom, currentData, currentDataAddr, numRemaining);
+			status = m95_Write(eeprom, currentData, numRemaining, currentDataAddr);
 			#endif
 			return status;
 		}
 		else
 		{
 			#ifdef EEPROM_M95
-			status = m95_Write(eeprom, currentData, currentDataAddr, PAGE_WIDTH);
+			status = m95_Write(eeprom, currentData, PAGE_WIDTH, currentDataAddr);
 			#endif
 			numRemaining -= PAGE_WIDTH;
 			currentData += PAGE_WIDTH;
@@ -148,7 +165,7 @@ EepromErrorState eeprom_Write(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint
 EepromErrorState eeprom_Read(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr)
 {
 #ifdef EEPROM_M95
-	return m95_Read(eeprom, pData, dataAddr, len);
+	return m95_Read(eeprom, pData, len, dataAddr);
 #endif
 }
 
@@ -160,7 +177,7 @@ EepromErrorState eeprom_Read(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint3
 EepromErrorState eeprom_EraseAll(Eeprom* eeprom)
 {
 	EepromErrorState status;
-	uint8_t erasePacket[PAGE_WIDTH];
+	
 	for(uint16_t i=0; i<PAGE_WIDTH; i++)
 	{
 		erasePacket[i] = 0xff;
@@ -168,7 +185,7 @@ EepromErrorState eeprom_EraseAll(Eeprom* eeprom)
 	for(uint16_t i=0; i<NUM_EEPROM_PAGES; i++)
 	{
 		#ifdef EEPROM_M95
-		status = m95_Write(eeprom, erasePacket, i*PAGE_WIDTH, PAGE_WIDTH);
+		status = m95_Write(eeprom, erasePacket, PAGE_WIDTH, i*PAGE_WIDTH);
 		#endif
 		if(status != EepromOk)
 		{
@@ -190,13 +207,13 @@ EepromErrorState eeprom_EraseAll(Eeprom* eeprom)
   * @param	size Number of bytes to be read
   * @retval	error state
   */
-EepromErrorState m95_Read(Eeprom* eeprom, uint8_t *pData, uint32_t dataAddr, uint32_t size)
+EepromErrorState m95_Read(Eeprom* eeprom, uint8_t *pData, uint32_t size, uint32_t dataAddr)
 {
 	// Check to make sure the device is ready
 	while(HAL_SPI_GetState(eeprom->hspi) != HAL_SPI_STATE_READY);
 
 	// Prepare the command + address header
-	uint8_t txPacket[4 + size];
+	uint8_t txPacket[4];
 	txPacket[0] = READ_CMD;
 	txPacket[1] = (uint8_t)((dataAddr >> 16) & 0xff);
 	txPacket[2] = (uint8_t)((dataAddr >> 8) & 0xff);
@@ -226,7 +243,7 @@ EepromErrorState m95_Read(Eeprom* eeprom, uint8_t *pData, uint32_t dataAddr, uin
   * @param	size Number of bytes to be written
   * @retval	error state
   */
-EepromErrorState m95_Write(Eeprom* eeprom, uint8_t *data, uint32_t dataAddr, uint32_t size)
+EepromErrorState m95_Write(Eeprom* eeprom, uint8_t *data, uint32_t size, uint32_t dataAddr)
 {
 	if(size > PAGE_WIDTH)
 	{
@@ -257,14 +274,19 @@ EepromErrorState m95_Write(Eeprom* eeprom, uint8_t *data, uint32_t dataAddr, uin
 	{
 		return status;
 	}
-
+	while(HAL_SPI_GetState(eeprom->hspi) != HAL_SPI_STATE_READY);
 	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_RESET);
 	if(HAL_SPI_Transmit(eeprom->hspi, txPacket, size + 4, HAL_MAX_DELAY) != HAL_OK)
 	{
 		return EepromHalError;
 	}
 	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_SET);
-	return EepromOk;
+	status = m95_PollReady(eeprom);
+	if(status != EepromOk)
+	{
+		return status;
+	}
+	return status;
 }
 
 /**
@@ -281,7 +303,7 @@ EepromErrorState m95_PollReady(Eeprom* eeprom)
 
 	while(HAL_SPI_GetState(eeprom->hspi) != HAL_SPI_STATE_READY);
 	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_RESET);
-	if(HAL_SPI_Transmit(eeprom->hspi, &txBuf, 1, 5) != HAL_OK)
+	if(HAL_SPI_Transmit(eeprom->hspi, &txBuf, 1, HAL_MAX_DELAY) != HAL_OK)
 	{
 		return EepromHalError;
 	}
@@ -291,11 +313,12 @@ EepromErrorState m95_PollReady(Eeprom* eeprom)
 	#elif FRAMEWORK_ARDUINO
 	startMs = millis();
 	#endif
+	timeMs = startMs;
 	while((timeMs - startMs) < READY_CHECK_TIMEOUT)
 	{
 		// Read the status register contents
 		while(HAL_SPI_GetState(eeprom->hspi) != HAL_SPI_STATE_READY);
-		if(HAL_SPI_Receive(eeprom->hspi, &rxBuf, 1, 5) != HAL_OK)
+		if(HAL_SPI_Receive(eeprom->hspi, &rxBuf, 1, HAL_MAX_DELAY) != HAL_OK)
 		{
 			HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_SET);
 			return EepromHalError;
@@ -308,9 +331,9 @@ EepromErrorState m95_PollReady(Eeprom* eeprom)
 		}
 		// Get the current polling time. This is used to check for a timeout condition
 		#if FRAMEWORK_STM32CUBE
-		uint32_t timeMs = HAL_GetTick();
+		timeMs = HAL_GetTick();
 		#elif FRAMEWORK_ARDUINO
-		uint32_t timeMs = millis();
+		timeMs = millis();
 		#endif
 	}
 	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_SET);
@@ -331,9 +354,9 @@ EepromErrorState m95_PollReady(Eeprom* eeprom)
 EepromErrorState m95_WriteEnable(Eeprom* eeprom)
 {
 	// Send the write enmable (WREN) instruction
-	uint8_t wrdiPacket = WRDI_CMD;
+	uint8_t wrenPacket = WREN_CMD;
 	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_RESET);
-	if(HAL_SPI_Transmit(eeprom->hspi, &wrdiPacket, 1, 10) != HAL_OK)
+	if(HAL_SPI_Transmit(eeprom->hspi, &wrenPacket, 1, HAL_MAX_DELAY) != HAL_OK)
 	{
 		return EepromHalError;
 	}
@@ -355,9 +378,9 @@ EepromErrorState m95_WriteEnable(Eeprom* eeprom)
 EepromErrorState m95_WriteDisable(Eeprom* eeprom)
 {
 	// Send the write enmable (WREN) instruction
-	uint8_t wrenPacket = WREN_CMD;
+	uint8_t wrdiPacket = WRDI_CMD;
 	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_RESET);
-	if(HAL_SPI_Transmit(eeprom->hspi, &wrenPacket, 1, 10) != HAL_OK)
+	if(HAL_SPI_Transmit(eeprom->hspi, &wrdiPacket, 1, HAL_MAX_DELAY) != HAL_OK)
 	{
 		return EepromHalError;
 	}
@@ -373,4 +396,23 @@ EepromErrorState m95_WriteDisable(Eeprom* eeprom)
   * @retval	Error state
   */
 EepromErrorState m95_ReadStatusRegister(Eeprom* eeprom, uint8_t* data)
+{
+	uint8_t txBuf[2] = {RDSR_CMD, 0};
+	uint8_t rxBuf[2];
+
+	while(HAL_SPI_GetState(eeprom->hspi) != HAL_SPI_STATE_READY);
+	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_RESET);
+	if(HAL_SPI_TransmitReceive(eeprom->hspi, txBuf, rxBuf, 2, HAL_MAX_DELAY) != HAL_OK)
+	{
+		return EepromHalError;
+	}
+	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_SET);
+
+	*data = rxBuf[1];
+	return EepromOk;
+}
+#endif
+
+#ifdef __cplusplus
+}
 #endif
