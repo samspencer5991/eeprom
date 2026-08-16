@@ -17,18 +17,6 @@ extern "C" {
 
 // M95 EEPROM Devices
 #ifdef EEPROM_M95
-<<<<<<< Updated upstream
-#define MAX_WRITE_CYCLES	4000000	// Maximum number of writes allowed per cell
-#define PAGE_WIDTH 			512			// Maximum number of bytes in a page write
-
-#if defined(M95M04)
-#define DEVICE_SIZE 			512000	// EEPROM storage size in bytes
-#define NUM_EEPROM_PAGES	1000		// Equal to the device size / page size
-
-#define WRITE_CYCLE_TIME	      5				// Required time for the device to complete an internal  write operation (mS)
-#define READ_CYCLE_TIME		      5				// Required time for the device to complete an internal  read operation (mS)
-#define READY_CHECK_TIMEOUT	   15
-=======
 #define PAGE_WIDTH 				512			// Maximum number of bytes in a page write
 
 #if defined(M95M04)
@@ -39,7 +27,6 @@ extern "C" {
 #define WRITE_CYCLE_TIME		5				// Required time for the device to complete an internal  write operation (mS)
 #define READ_CYCLE_TIME			5				// Required time for the device to complete an internal  read operation (mS)
 #define READY_CHECK_TIMEOUT		15
->>>>>>> Stashed changes
 
 // Command bytes
 #define WREN_CMD	0b00000110		// Write enable
@@ -51,27 +38,6 @@ extern "C" {
 #define RDID_CMD	0b10000011		// Read Identification page
 #define WRID_CMD	0b10000010		// Write Identification page
 #define RDLS_CMD	0b10000011		// Reads the Identification page lock status
-<<<<<<< Updated upstream
-#define LID_CMD	0b10000010		// Locks the Identification page in read-only mode
-
-// Status register bit positions
-#define WIP_BIT	0
-#define WEL_BIT 	1
-#define BP0_BIT	2
-#define BP1_BIT	3
-#define SRWD_BIT	4
-#endif
-
-//-------------------- Private Function Prototypes --------------------//
-EepromErrorState m95_Read(Eeprom* eeprom, uint8_t *pData, uint32_t dataAddr, uint32_t size);
-EepromErrorState m95_Write(Eeprom* eeprom, uint8_t *data, uint32_t dataAddr, uint32_t size);
-EepromErrorState m95_PollReady(Eeprom* eeprom);
-EepromErrorState m95_WriteEnable(Eeprom* eeprom);
-EepromErrorState m95_WriteDisable(Eeprom* eeprom);
-EepromErrorState m95_ReadStatusRegister(Eeprom* eeprom, uint8_t* data);
-#endif
-
-=======
 #define LID_CMD		0b10000010		// Locks the Identification page in read-only mode
 
 // Status register bit positions
@@ -153,7 +119,6 @@ EepromErrorState m95p32_WriteStatusConfigRegisters(Eeprom* eeprom, uint8_t statu
 #endif
 
 #if !defined(M95P32)
->>>>>>> Stashed changes
 uint8_t erasePacket[PAGE_WIDTH];
 #endif
 
@@ -268,27 +233,18 @@ EepromErrorState eeprom_Read(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint3
 }
 
 /**
-<<<<<<< Updated upstream
-  * @brief 	Erases the entire eeprom chip by writing 0xff to every address.
-=======
   * @brief 	Erases the entire eeprom chip, setting every address to 0xff.
->>>>>>> Stashed changes
   * @param eeprom eeprom struct
   * @retval	error state
   */
 EepromErrorState eeprom_EraseAll(Eeprom* eeprom)
 {
-<<<<<<< Updated upstream
-	EepromErrorState status;
-	
-=======
 #if defined(M95P32)
 	// The M95P32 has a dedicated single-instruction chip erase
 	return eeprom_EraseChip(eeprom);
 #else
 	EepromErrorState status;
 
->>>>>>> Stashed changes
 	for(uint16_t i=0; i<PAGE_WIDTH; i++)
 	{
 		erasePacket[i] = 0xff;
@@ -304,10 +260,6 @@ EepromErrorState eeprom_EraseAll(Eeprom* eeprom)
 		}
 	}
 	return status;
-<<<<<<< Updated upstream
-}
-
-=======
 #endif
 }
 
@@ -634,7 +586,6 @@ EepromErrorState eeprom_SetBlockProtection(Eeprom* eeprom, uint8_t bpLevel, uint
 }
 #endif
 
->>>>>>> Stashed changes
 
 //-------------------- Private Device Functions --------------------//
 #ifdef EEPROM_M95
@@ -709,11 +660,7 @@ EepromErrorState m95_Write(Eeprom* eeprom, uint8_t *data, uint32_t size, uint32_
 
 	// Wait until the device is ready
 	// On a HAL error or device timeout, return the error condition
-<<<<<<< Updated upstream
-	EepromErrorState status = m95_PollReady(eeprom);
-=======
 	EepromErrorState status = m95_PollReady(eeprom, READY_CHECK_TIMEOUT);
->>>>>>> Stashed changes
 	if(status != EepromOk)
 	{
 		return status;
@@ -725,11 +672,7 @@ EepromErrorState m95_Write(Eeprom* eeprom, uint8_t *data, uint32_t size, uint32_
 		return EepromHalError;
 	}
 	HAL_GPIO_WritePin(eeprom->csPort, eeprom->csPin, GPIO_PIN_SET);
-<<<<<<< Updated upstream
-	status = m95_PollReady(eeprom);
-=======
 	status = m95_PollReady(eeprom, READY_CHECK_TIMEOUT);
->>>>>>> Stashed changes
 	if(status != EepromOk)
 	{
 		return status;
@@ -739,13 +682,6 @@ EepromErrorState m95_Write(Eeprom* eeprom, uint8_t *data, uint32_t size, uint32_
 
 /**
   * @brief	Continuously reads the status register, checking for the WIP bit to be reset.
-<<<<<<< Updated upstream
-  * The typical write cycle time is 5ms, however a timeout is added for device lockup. 
-  * @param	eeprom eeprom struct
-  * @retval	Error state. EepromOk if the device is ready, EepromBusy if the device is not ready
-  */
-EepromErrorState m95_PollReady(Eeprom* eeprom)
-=======
   * A timeout is added for device lockup, sized to the operation being waited on
   * (page writes complete in ~5mS, but block/chip erases can take up to 25mS).
   * @param	eeprom eeprom struct
@@ -753,7 +689,6 @@ EepromErrorState m95_PollReady(Eeprom* eeprom)
   * @retval	Error state. EepromOk if the device is ready, EepromBusy if the device is not ready
   */
 EepromErrorState m95_PollReady(Eeprom* eeprom, uint32_t timeoutMs)
->>>>>>> Stashed changes
 {
 	uint8_t txBuf = RDSR_CMD;
 	uint8_t rxBuf;
@@ -772,11 +707,7 @@ EepromErrorState m95_PollReady(Eeprom* eeprom, uint32_t timeoutMs)
 	startMs = millis();
 	#endif
 	timeMs = startMs;
-<<<<<<< Updated upstream
-	while((timeMs - startMs) < READY_CHECK_TIMEOUT)
-=======
 	while((timeMs - startMs) < timeoutMs)
->>>>>>> Stashed changes
 	{
 		// Read the status register contents
 		while(HAL_SPI_GetState(eeprom->hspi) != HAL_SPI_STATE_READY);
@@ -873,8 +804,6 @@ EepromErrorState m95_ReadStatusRegister(Eeprom* eeprom, uint8_t* data)
 	*data = rxBuf[1];
 	return EepromOk;
 }
-<<<<<<< Updated upstream
-=======
 
 #if defined(M95P32)
 /**
@@ -963,7 +892,6 @@ EepromErrorState m95p32_WriteStatusConfigRegisters(Eeprom* eeprom, uint8_t statu
 	return m95_PollReady(eeprom, WRSR_TIMEOUT);
 }
 #endif
->>>>>>> Stashed changes
 #endif
 
 #ifdef __cplusplus

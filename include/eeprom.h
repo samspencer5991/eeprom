@@ -9,11 +9,8 @@
 #include "stm32h5xx_hal.h"
 #elif defined(STM32G0xx)
 #include "stm32g0xx_hal.h"
-<<<<<<< Updated upstream
-=======
 #elif defined(STM32H7xx)
 #include "stm32h7xx_hal.h"
->>>>>>> Stashed changes
 #endif
 #elif FRAMEWORK_ARDUINO
 #include "Arduino.h"
@@ -24,17 +21,10 @@ extern "C" {
 #endif
 
 // SUPPORTED EEPROM CHIPS //
-<<<<<<< Updated upstream
-#define M95M04
-//#define M95M01
-
-#if defined(M95M04) || defined(M95M01)
-=======
 //#define M95M04
 //#define M95M01
 
 #if defined(M95M04) || defined(M95M01) || defined(M95P32)
->>>>>>> Stashed changes
 #define SPI_EEPROM
 #define EEPROM_M95
 #endif
@@ -89,10 +79,6 @@ typedef struct
 EepromErrorState eeprom_Init(Eeprom* eeprom);
 EepromErrorState eeprom_Write(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr);
 EepromErrorState eeprom_Read(Eeprom* eeprom, uint8_t *pData, uint32_t len, uint32_t dataAddr);
-<<<<<<< Updated upstream
-EepromErrorState eeprom_EraseAll();
-
-=======
 EepromErrorState eeprom_EraseAll(Eeprom* eeprom);
 
 #if defined(M95P32)
@@ -121,7 +107,6 @@ EepromErrorState eeprom_WriteVolatileRegister(Eeprom* eeprom, uint8_t data);
 EepromErrorState eeprom_SetBlockProtection(Eeprom* eeprom, uint8_t bpLevel, uint8_t protectBottom);
 #endif
 
->>>>>>> Stashed changes
 #ifdef __cplusplus
 }
 #endif
